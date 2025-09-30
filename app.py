@@ -22,8 +22,13 @@ if not teams.empty and "AgeCategory" in teams.columns:
     age_categories = teams["AgeCategory"].unique().tolist()
 else:
     # قائمة افتراضية لو الملف مش موجود أو العمود ناقص
-    age_categories = ["براعم بنات تحت 9 سنوات", "براعم بنين تحت 9 سنوات", "براعم بنات تحت 10 سنوات", "براعم بنين تحت 10 سنوات", "براعم بنات تحت 11 سنة",
-                      "براعم بنين تحت 11 سنة", "براعم بنات تحت 12 سنة", "براعم بنين تحت 12 سنة", "الأشبال بنات تحت 13 سنة", "الأشبال بنين تحت 13 سنة"]
+    age_categories = [
+        "براعم بنات تحت 9 سنوات", "براعم بنين تحت 9 سنوات",
+        "براعم بنات تحت 10 سنوات", "براعم بنين تحت 10 سنوات",
+        "براعم بنات تحت 11 سنة", "براعم بنين تحت 11 سنة",
+        "براعم بنات تحت 12 سنة", "براعم بنين تحت 12 سنة",
+        "الأشبال بنات تحت 13 سنة", "الأشبال بنين تحت 13 سنة"
+    ]
 
 # دالة لحساب النقاط من النتيجة
 
@@ -48,45 +53,38 @@ def calculate_points(row):
         return 0, 0
 
 
-# بناء التابات الرئيسية
-main_tabs = st.tabs(age_categories)
+# اختيار المرحلة من selectbox
+category = st.selectbox("اختر المرحلة السنية:", age_categories)
+st.subheader(f"مرحلة {category}")
 
-# عرض تبويب لكل مرحلة
-for i, category in enumerate(age_categories):
-    with main_tabs[i]:
-        st.subheader(f"مرحلة {category}")
+# التابات الفرعية داخل كل مرحلة
+sub_tabs = st.tabs(["📅 المباريات", "📊 النتائج", "🏆 الترتيب"])
 
-        # التابات الفرعية داخل كل مرحلة
-        sub_tabs = st.tabs(["📅 المباريات", "📊 النتائج", "🏆 الترتيب"])
+with sub_tabs[0]:
+    st.write(f"📅 جدول المباريات لمرحلة {category}")
+    if not matches.empty and "AgeCategory" in matches.columns:
+        st.dataframe(matches[matches["AgeCategory"] == category])
 
-        with sub_tabs[0]:
-            st.write(f"هنا جدول المباريات لمرحلة {category}")
-            if not matches.empty and "AgeCategory" in matches.columns:
-                st.dataframe(matches[matches["AgeCategory"] == category])
+with sub_tabs[1]:
+    st.write(f"📊 النتائج لمرحلة {category}")
+    if not matches.empty and "AgeCategory" in matches.columns:
+        st.dataframe(matches[matches["AgeCategory"] == category][[
+            "TeamA", "TeamB", "ScoreA", "ScoreB"
+        ]])
 
-        with sub_tabs[1]:
-            st.write(f"هنا النتائج لمرحلة {category}")
-            if not matches.empty and "AgeCategory" in matches.columns:
-                st.dataframe(matches[matches["AgeCategory"] == category][[
-                             "TeamA", "TeamB", "ScoreA", "ScoreB"]])
+with sub_tabs[2]:
+    st.write(f"🏆 الترتيب لمرحلة {category}")
+    if not matches.empty and "AgeCategory" in matches.columns:
+        cat_matches = matches[matches["AgeCategory"] == category].copy()
+        standings = {}
+        for _, row in cat_matches.iterrows():
+            team_a, team_b = row["TeamA"], row["TeamB"]
+            pa, pb = calculate_points(row)
+            standings[team_a] = standings.get(team_a, 0) + pa
+            standings[team_b] = standings.get(team_b, 0) + pb
 
-        with sub_tabs[2]:
-            st.write(f"🏆 الترتيب لمرحلة {category}")
+        standings_df = pd.DataFrame(
+            standings.items(), columns=["Team", "Points"]
+        ).sort_values(by="Points", ascending=False)
 
-            if not matches.empty and "AgeCategory" in matches.columns:
-                cat_matches = matches[matches["AgeCategory"]
-                                      == category].copy()
-
-                standings = {}
-                for _, row in cat_matches.iterrows():
-                    team_a, team_b = row["TeamA"], row["TeamB"]
-                    pa, pb = calculate_points(row)
-
-                    standings[team_a] = standings.get(team_a, 0) + pa
-                    standings[team_b] = standings.get(team_b, 0) + pb
-
-                standings_df = pd.DataFrame(
-                    standings.items(), columns=["Team", "Points"]
-                ).sort_values(by="Points", ascending=False)
-
-                st.dataframe(standings_df)
+        st.dataframe(standings_df)
