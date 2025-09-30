@@ -36,7 +36,8 @@ def load_data():
         matches = pd.read_excel("matches_final.xlsx")
     except Exception as e:
         st.error(f"Error loading Excel files: {e}")
-        teams, matches = pd.DataFrame(), pd.DataFrame()
+        teams, matches = pd.DataFrame(), pd.DataFrame(
+            "date", "TeamA", "TeamB", "ScoreA", "ScoreB")
     return teams, matches
 
 
@@ -55,13 +56,13 @@ else:
     ]
 
 
-# الأعمدة اللي مش عايز تعرضها
-cols_to_hide = ["match_id", "round", "AgeCategory"]
+# # الأعمدة اللي مش عايز تعرضها
+# cols_to_hide = ["match_id", "round", "AgeCategory"]
 
-# عند العرض فقط
-if not matches.empty:
-    st.dataframe(matches.drop(
-        columns=[c for c in cols_to_hide if c in matches.columns]))
+# # عند العرض فقط
+# if not matches.empty:
+#     st.dataframe(matches.drop(
+#         columns=[c for c in cols_to_hide if c in matches.columns]))
 
 
 # -------------------------- # دالة حساب النقاط # -------------------------- #
