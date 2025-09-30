@@ -1,89 +1,91 @@
 import streamlit as st
 import pandas as pd
 
-# --------------------------
 # تحميل البيانات من Excel
-# --------------------------
 
 
 @st.cache_data
 def load_data():
-    teams = pd.read_excel("teams_expanded.xlsx")
-    matches = pd.read_excel("matches_expanded.xlsx")
+    try:
+        teams = pd.read_excel("teams_final.xlsx")
+        matches = pd.read_excel("matches_final.xlsx")
+    except Exception as e:
+        st.error(f"Error loading Excel files: {e}")
+        teams, matches = pd.DataFrame(), pd.DataFrame()
     return teams, matches
 
 
 teams, matches = load_data()
 
-# --------------------------
-# واجهة التطبيق
-# --------------------------
-st.set_page_config(page_title="Volleyball League", layout="wide")
-st.title("🏐 نتائج مباريات منطقة الإسكندرية للكرة الطائرة 🏐")
+# تحديد المراحل السنية
+if not teams.empty and "AgeCategory" in teams.columns:
+    age_categories = teams["AgeCategory"].unique().tolist()
+else:
+    # قائمة افتراضية لو الملف مش موجود أو العمود ناقص
+    age_categories = ["U10", "U12", "U14", "U16", "U18", "U20", "Senior"]
 
-# جميع المراحل السنية
-age_categories = teams["age_categories"].unique()
+# دالة لحساب النقاط من النتيجة
 
-# Tabs رئيسية لكل مرحلة سنية
+
+def calculate_points(row):
+    score_a = str(row["ScoreA"])
+    score_b = str(row["ScoreB"])
+    try:
+        sa, sb = map(int, [score_a, score_b])
+    except:
+        return 0, 0  # لو النتيجة مش مدخلة صح
+
+    if (sa == 3 and sb in [0, 1]):
+        return 3, 0
+    elif (sb == 3 and sa in [0, 1]):
+        return 0, 3
+    elif (sa == 3 and sb == 2):
+        return 2, 1
+    elif (sb == 3 and sa == 2):
+        return 1, 2
+    else:
+        return 0, 0
+
+
+# بناء التابات الرئيسية
 main_tabs = st.tabs(age_categories)
 
-# --------------------------
-# بناء تبويبات فرعية لكل مرحلة
-# --------------------------
-for i, age in enumerate(age_categories):
+# عرض تبويب لكل مرحلة
+for i, category in enumerate(age_categories):
     with main_tabs[i]:
-        st.subheader(f"📌 المرحلة: {age}")
+        st.subheader(f"مرحلة {category}")
 
-        # Tabs داخلية
-        tab1, tab2, tab3 = st.tabs(["📅 المباريات", "📊 النتائج", "🏆 الترتيب"])
+        # التابات الفرعية داخل كل مرحلة
+        sub_tabs = st.tabs(["📅 المباريات", "📊 النتائج", "🏆 الترتيب"])
 
-        # --------------------------
-        # المباريات
-        # --------------------------
-        with tab1:
-            st.markdown("### 📅 المباريات القادمة")
-            upcoming = matches[(matches["age_categories"] == age) & (
-                matches["home_score"].isna())]
-            st.dataframe(upcoming)
+        with sub_tabs[0]:
+            st.write(f"هنا جدول المباريات لمرحلة {category}")
+            if not matches.empty and "AgeCategory" in matches.columns:
+                st.dataframe(matches[matches["AgeCategory"] == category])
 
-        # --------------------------
-        # النتائج
-        # --------------------------
-        with tab2:
-            st.markdown("### 📊 إدخال النتائج")
-            for idx, row in matches.iterrows():
-                if row["age_categories"] == age:
-                    home_score = st.number_input(
-                        f"{row['home_team']} 🏐", min_value=0, step=1, key=f"h{age}{idx}")
-                    away_score = st.number_input(
-                        f"{row['away_team']} 🏐", min_value=0, step=1, key=f"a{age}{idx}")
-                    if st.button(f"تحديث نتيجة مباراة {row['match_id']} ({age})", key=f"btn{age}{idx}"):
-                        matches.at[idx, "home_score"] = home_score
-                        matches.at[idx, "away_score"] = away_score
-                        # تحديث ملف Excel
-                        matches.to_excel("matches_expanded.xlsx", index=False)
-                        st.success("✅ تم تحديث النتيجة وحفظها")
+        with sub_tabs[1]:
+            st.write(f"هنا النتائج لمرحلة {category}")
+            if not matches.empty and "AgeCategory" in matches.columns:
+                st.dataframe(matches[matches["AgeCategory"] == category][[
+                             "TeamA", "TeamB", "ScoreA", "ScoreB"]])
 
-        # --------------------------
-        # الترتيب
-        # --------------------------
-        with tab3:
-            st.markdown("### 🏆 جدول الترتيب")
-            results = matches.dropna(subset=["home_score", "away_score"])
-            standings = teams[teams["age_categories"] == age].copy()
-            standings["points"] = 0
+        with sub_tabs[2]:
+            st.write(f"🏆 الترتيب لمرحلة {category}")
 
-            for _, row in results.iterrows():
-                if row["age_categories"] == age:
-                    if row["home_score"] > row["away_score"]:
-                        standings.loc[standings["team_name"]
-                                      == row["home_team"], "points"] += 3
-                    elif row["home_score"] < row["away_score"]:
-                        standings.loc[standings["team_name"]
-                                      == row["away_team"], "points"] += 3
-                    else:
-                        standings.loc[standings["team_name"].isin(
-                            [row["home_team"], row["away_team"]]), "points"] += 1
+            if not matches.empty and "AgeCategory" in matches.columns:
+                cat_matches = matches[matches["AgeCategory"]
+                                      == category].copy()
 
-            standings = standings.sort_values(by="points", ascending=False)
-            st.dataframe(standings)
+                standings = {}
+                for _, row in cat_matches.iterrows():
+                    team_a, team_b = row["TeamA"], row["TeamB"]
+                    pa, pb = calculate_points(row)
+
+                    standings[team_a] = standings.get(team_a, 0) + pa
+                    standings[team_b] = standings.get(team_b, 0) + pb
+
+                standings_df = pd.DataFrame(
+                    standings.items(), columns=["Team", "Points"]
+                ).sort_values(by="Points", ascending=False)
+
+                st.dataframe(standings_df)
