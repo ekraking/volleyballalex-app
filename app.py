@@ -16,7 +16,7 @@ with col1:
 with col2:
     st.markdown(
         """
-        <h1 style='text-align: right; color: #FFD700;'>
+        <h1 style='text-align: center; color: #FFD700;'>
         🏐 نتائج مباريات منطقة الإسكندرية للكرة الطائرة 🏐
         </h1>
         """,
@@ -25,6 +25,11 @@ with col2:
 
 # صورة بانر أو هيدر أسفل العنوان
 # st.image("header.jpg", use_column_width=True)
+
+# 👇 الأعمدة اللي عايز تخفيها من matches
+cols_to_hide = ["match_id", "round", "AgeCategory"]
+matches = matches.drop(
+    columns=[c for c in cols_to_hide if c in matches.columns])
 
 # -------------------------- # تحميل البيانات # -------------------------- #
 
