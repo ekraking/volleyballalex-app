@@ -19,10 +19,10 @@ teams, matches = load_data()
 # واجهة التطبيق
 # --------------------------
 st.set_page_config(page_title="Volleyball League", layout="wide")
-st.title("🏐 Volleyball Village League")
+st.title("🏐 نتائج مباريات منطقة الإسكندرية للكرة الطائرة 🏐")
 
 # جميع المراحل السنية
-age_categories = teams["age_category"].unique()
+age_categories = teams["age_categories"].unique()
 
 # Tabs رئيسية لكل مرحلة سنية
 main_tabs = st.tabs(age_categories)
@@ -42,8 +42,8 @@ for i, age in enumerate(age_categories):
         # --------------------------
         with tab1:
             st.markdown("### 📅 المباريات القادمة")
-            upcoming = matches[(matches["age_category"] == age)
-                               & (matches["home_score"].isna())]
+            upcoming = matches[(matches["age_categories"] == age) & (
+                matches["home_score"].isna())]
             st.dataframe(upcoming)
 
         # --------------------------
@@ -52,7 +52,7 @@ for i, age in enumerate(age_categories):
         with tab2:
             st.markdown("### 📊 إدخال النتائج")
             for idx, row in matches.iterrows():
-                if row["age_category"] == age:
+                if row["age_categories"] == age:
                     home_score = st.number_input(
                         f"{row['home_team']} 🏐", min_value=0, step=1, key=f"h{age}{idx}")
                     away_score = st.number_input(
@@ -70,11 +70,11 @@ for i, age in enumerate(age_categories):
         with tab3:
             st.markdown("### 🏆 جدول الترتيب")
             results = matches.dropna(subset=["home_score", "away_score"])
-            standings = teams[teams["age_category"] == age].copy()
+            standings = teams[teams["age_categories"] == age].copy()
             standings["points"] = 0
 
             for _, row in results.iterrows():
-                if row["age_category"] == age:
+                if row["age_categories"] == age:
                     if row["home_score"] > row["away_score"]:
                         standings.loc[standings["team_name"]
                                       == row["home_team"], "points"] += 3
