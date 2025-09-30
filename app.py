@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 
+# -------------------------- # واجهة التطبيق # -------------------------- #
+
+st.set_page_config(page_title="Volleyball League", layout="wide", theme="dark")
+st.title("🏐 نتائج مباريات منطقة الإسكندرية للكرة الطائرة 🏐")
+
 # تحميل البيانات من Excel
 
 
