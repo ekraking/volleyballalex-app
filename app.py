@@ -26,13 +26,8 @@ with col2:
 # صورة بانر أو هيدر أسفل العنوان
 # st.image("header.jpg", use_column_width=True)
 
-# 👇 الأعمدة اللي عايز تخفيها من matches
-cols_to_hide = ["match_id", "round", "AgeCategory"]
-matches = matches.drop(
-    columns=[c for c in cols_to_hide if c in matches.columns])
 
 # -------------------------- # تحميل البيانات # -------------------------- #
-
 
 @st.cache_data
 def load_data():
@@ -58,6 +53,16 @@ else:
         "براعم بنات تحت 12 سنة", "براعم بنين تحت 12 سنة",
         "الأشبال بنات تحت 13 سنة", "الأشبال بنين تحت 13 سنة"
     ]
+
+
+# الأعمدة اللي مش عايز تعرضها
+cols_to_hide = ["match_id", "round", "AgeCategory"]
+
+# عند العرض فقط
+if not matches.empty:
+    st.dataframe(matches.drop(
+        columns=[c for c in cols_to_hide if c in matches.columns]))
+
 
 # -------------------------- # دالة حساب النقاط # -------------------------- #
 
