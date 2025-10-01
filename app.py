@@ -16,7 +16,7 @@ with col1:
 with col2:
     st.markdown(
         """
-        <h1 style='text-align: center; color: #FFD700;'>
+        <h1 style='text-align: center; color: #0026ff;'>
         🏐 نتائج مباريات منطقة الإسكندرية للكرة الطائرة 🏐
         </h1>
         """,
